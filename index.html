@@ -413,7 +413,7 @@ footer p{margin-bottom:5px}
     <span>⏱ 2 horas</span>
     <span>◈ $50.000 COP</span>
   </div>
-  <a href="#" class="cta-btn" id="ctaBtn">Quiero mi cupo</a>
+  <a href="https://wa.link/7q2ufz" class="cta-btn" target="_blank" rel="noopener">Quiero mi cupo</a>
   <p class="cta-fine">Nutrir el cuerpo, despertar el alma · Cupos limitados · Queda grabada</p>
 </div>
 
@@ -1085,11 +1085,6 @@ document.getElementById("clr").onclick=()=>{
 document.getElementById("inp").addEventListener("keydown",e=>{
   if((e.metaKey||e.ctrlKey)&&e.key==="Enter") document.getElementById("go").click();
 });
-
-document.getElementById("ctaBtn").onclick=e=>{
-  e.preventDefault();
-  alert("Aquí va el enlace a tu página de inscripción en Systeme.io.\n\nReemplaza el href del botón con tu URL real.");
-};
 
 buildLib();
 renderTrainer();
