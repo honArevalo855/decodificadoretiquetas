@@ -1,0 +1,1098 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>El Decodificador de Etiquetas</title>
+<meta name="description" content="Pega la lista de ingredientes de cualquier producto y descubre qué estás comprando realmente. Herramienta gratuita de María del Carmen Puente, Terapeuta Nutricional.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#141E2B; --ink-2:#243448; --paper:#FBFAF7; --card:#FFFFFF;
+  --green:#1E6F50; --green-l:#3D9A74; --green-bg:#EDF5F1;
+  --amber:#B4740A; --amber-bg:#FDF6E9;
+  --red:#A82A2A; --red-bg:#FBEEEE;
+  --gray:#5A636B; --gray-l:#8B949C; --line:#E4E2DC;
+  --shadow:0 1px 3px rgba(20,30,43,.06),0 8px 24px rgba(20,30,43,.05);
+  --radius:14px;
+}
+@media(prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --ink:#F0EEE9; --ink-2:#C8CDD4; --paper:#12161C; --card:#1A1F27;
+    --green:#4FB58A; --green-l:#3D9A74; --green-bg:#16302A;
+    --amber:#D9A441; --amber-bg:#2E2717;
+    --red:#E07A7A; --red-bg:#2E1B1B;
+    --gray:#9AA2AA; --gray-l:#6E767E; --line:#2A313B;
+    --shadow:0 1px 3px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.25);
+  }
+}
+:root[data-theme="dark"]{
+  --ink:#F0EEE9; --ink-2:#C8CDD4; --paper:#12161C; --card:#1A1F27;
+  --green:#4FB58A; --green-l:#3D9A74; --green-bg:#16302A;
+  --amber:#D9A441; --amber-bg:#2E2717;
+  --red:#E07A7A; --red-bg:#2E1B1B;
+  --gray:#9AA2AA; --gray-l:#6E767E; --line:#2A313B;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{
+  font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  background:var(--paper); color:var(--ink); line-height:1.6;
+  font-size:16px; overflow-x:hidden;
+}
+img{max-width:100%}
+.wrap{max-width:860px;margin:0 auto;padding:0 20px}
+
+/* ── HEADER ── */
+header{padding:48px 0 28px;text-align:center}
+.eyebrow{
+  font-size:11px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--green);font-weight:700;margin-bottom:14px
+}
+h1{
+  font-family:'Fraunces',Georgia,serif;font-weight:700;
+  font-size:clamp(2rem,7vw,3.1rem);line-height:1.08;
+  letter-spacing:-.02em;margin-bottom:14px
+}
+.sub{
+  font-size:clamp(1rem,2.4vw,1.15rem);color:var(--gray);
+  max-width:520px;margin:0 auto 8px
+}
+.byline{font-size:13px;color:var(--gray-l);margin-top:18px}
+.byline b{color:var(--ink-2);font-weight:600}
+
+/* ── TABS ── */
+.tabs{
+  display:flex;gap:6px;background:var(--card);padding:6px;
+  border-radius:999px;border:1px solid var(--line);
+  max-width:520px;margin:26px auto 0;box-shadow:var(--shadow)
+}
+.tab{
+  flex:1;padding:11px 8px;border:0;background:transparent;
+  font-family:inherit;font-size:13.5px;font-weight:600;color:var(--gray);
+  border-radius:999px;cursor:pointer;transition:.18s;white-space:nowrap
+}
+.tab:hover{color:var(--ink)}
+.tab.on{background:var(--ink);color:var(--paper)}
+
+/* ── PANELS ── */
+.panel{display:none;padding:34px 0 20px}
+.panel.on{display:block;animation:fade .3s ease}
+@keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+/* ── CARD ── */
+.card{
+  background:var(--card);border:1px solid var(--line);
+  border-radius:var(--radius);padding:24px;box-shadow:var(--shadow)
+}
+.card + .card{margin-top:16px}
+
+/* ── DECODER ── */
+.dec-label{font-size:14px;font-weight:600;margin-bottom:6px}
+.dec-hint{font-size:13px;color:var(--gray);margin-bottom:14px}
+textarea{
+  width:100%;min-height:130px;padding:15px;border-radius:11px;
+  border:1.5px solid var(--line);background:var(--paper);color:var(--ink);
+  font-family:inherit;font-size:15px;line-height:1.55;resize:vertical;
+  transition:border-color .15s
+}
+textarea:focus{outline:0;border-color:var(--green)}
+textarea::placeholder{color:var(--gray-l)}
+.row{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap}
+.btn{
+  padding:13px 24px;border:0;border-radius:10px;font-family:inherit;
+  font-size:14.5px;font-weight:600;cursor:pointer;transition:.18s
+}
+.btn-p{background:var(--ink);color:var(--paper);flex:1;min-width:180px}
+.btn-p:hover{background:var(--ink-2);transform:translateY(-1px)}
+.btn-s{background:transparent;color:var(--gray);border:1.5px solid var(--line)}
+.btn-s:hover{border-color:var(--gray);color:var(--ink)}
+.samples{margin-top:16px;padding-top:16px;border-top:1px solid var(--line)}
+.samples-t{font-size:12px;color:var(--gray-l);margin-bottom:9px;font-weight:600;letter-spacing:.04em;text-transform:uppercase}
+.chips{display:flex;gap:7px;flex-wrap:wrap}
+.chip{
+  padding:7px 13px;border-radius:999px;border:1px solid var(--line);
+  background:transparent;font-family:inherit;font-size:12.5px;color:var(--gray);
+  cursor:pointer;transition:.15s
+}
+.chip:hover{border-color:var(--green);color:var(--green);background:var(--green-bg)}
+
+/* ── RESULTS ── */
+#res{margin-top:20px;display:none}
+#res.on{display:block;animation:fade .35s ease}
+.verdict{
+  border-radius:var(--radius);padding:22px 24px;margin-bottom:16px;
+  border:1.5px solid
+}
+.v-ok{background:var(--green-bg);border-color:var(--green-l)}
+.v-mid{background:var(--amber-bg);border-color:var(--amber)}
+.v-bad{background:var(--red-bg);border-color:var(--red)}
+.v-head{display:flex;align-items:center;gap:12px;margin-bottom:9px}
+.v-dot{width:11px;height:11px;border-radius:50%;flex-shrink:0}
+.v-ok .v-dot{background:var(--green)}
+.v-mid .v-dot{background:var(--amber)}
+.v-bad .v-dot{background:var(--red)}
+.v-title{font-family:'Fraunces',serif;font-size:20px;font-weight:600;letter-spacing:-.01em}
+.v-ok .v-title{color:var(--green)}
+.v-mid .v-title{color:var(--amber)}
+.v-bad .v-title{color:var(--red)}
+.v-text{font-size:14.5px;color:var(--ink-2);line-height:1.6}
+
+.sect{margin-top:18px}
+.sect-h{
+  font-size:11.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--gray-l);margin-bottom:11px;padding-bottom:7px;border-bottom:1px solid var(--line)
+}
+
+/* highlighted text */
+.hl-box{
+  background:var(--paper);border:1px solid var(--line);border-radius:11px;
+  padding:16px;font-size:14.5px;line-height:2;word-break:break-word
+}
+mark{padding:2px 6px;border-radius:5px;font-weight:600;font-size:13.5px}
+mark.s{background:#F5D5D5;color:#7A1F1F}
+mark.a{background:#F8E3BC;color:#6B4405}
+mark.f{background:#D6E8DE;color:#144A36}
+@media(prefers-color-scheme:dark){
+  :root:not([data-theme="light"]) mark.s{background:#5A2020;color:#FFD9D9}
+  :root:not([data-theme="light"]) mark.a{background:#5A4510;color:#FFE9B8}
+  :root:not([data-theme="light"]) mark.f{background:#1C4736;color:#C8EDDC}
+}
+:root[data-theme="dark"] mark.s{background:#5A2020;color:#FFD9D9}
+:root[data-theme="dark"] mark.a{background:#5A4510;color:#FFE9B8}
+:root[data-theme="dark"] mark.f{background:#1C4736;color:#C8EDDC}
+
+.legend{display:flex;gap:14px;flex-wrap:wrap;margin-top:10px;font-size:12px;color:var(--gray)}
+.lg{display:flex;align-items:center;gap:6px}
+.lg i{width:11px;height:11px;border-radius:3px;display:block}
+
+/* findings */
+.find{
+  display:flex;gap:13px;padding:14px 0;border-bottom:1px solid var(--line)
+}
+.find:last-child{border-bottom:0}
+.f-ico{
+  width:30px;height:30px;border-radius:8px;flex-shrink:0;
+  display:grid;place-items:center;font-size:15px;font-weight:700
+}
+.f-s{background:var(--red-bg);color:var(--red)}
+.f-a{background:var(--amber-bg);color:var(--amber)}
+.f-g{background:var(--green-bg);color:var(--green)}
+.f-body{flex:1;min-width:0}
+.f-t{font-size:14.5px;font-weight:600;margin-bottom:3px}
+.f-d{font-size:13.5px;color:var(--gray);line-height:1.55}
+.f-d b{color:var(--ink-2);font-weight:600}
+
+/* three-first */
+.tf{display:flex;flex-direction:column;gap:9px}
+.tf-i{
+  display:flex;align-items:center;gap:13px;padding:12px 15px;
+  background:var(--paper);border:1px solid var(--line);border-radius:10px
+}
+.tf-n{
+  width:25px;height:25px;border-radius:50%;background:var(--ink);color:var(--paper);
+  display:grid;place-items:center;font-size:12.5px;font-weight:700;flex-shrink:0
+}
+.tf-x{flex:1;font-size:14.5px;font-weight:500}
+.tf-tag{font-size:11px;font-weight:700;padding:3px 9px;border-radius:999px;white-space:nowrap}
+.tag-r{background:var(--red-bg);color:var(--red)}
+.tag-g{background:var(--green-bg);color:var(--green)}
+
+/* stat pills */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(105px,1fr));gap:10px;margin-bottom:16px}
+.stat{
+  background:var(--paper);border:1px solid var(--line);border-radius:11px;
+  padding:14px 12px;text-align:center
+}
+.stat-n{font-family:'Fraunces',serif;font-size:26px;font-weight:700;line-height:1}
+.stat-l{font-size:11px;color:var(--gray);margin-top:5px;letter-spacing:.02em}
+
+/* ── LIBRARY ── */
+.lib-nav{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:20px}
+.lib-b{
+  padding:9px 16px;border-radius:999px;border:1.5px solid var(--line);
+  background:var(--card);font-family:inherit;font-size:13px;font-weight:600;
+  color:var(--gray);cursor:pointer;transition:.16s
+}
+.lib-b:hover{border-color:var(--green);color:var(--green)}
+.lib-b.on{background:var(--green);border-color:var(--green);color:#fff}
+.lib-sec{display:none}
+.lib-sec.on{display:block;animation:fade .28s ease}
+.lib-intro{
+  font-size:14.5px;color:var(--gray);margin-bottom:18px;
+  padding-left:14px;border-left:3px solid var(--green)
+}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:13px}
+.gc{
+  background:var(--card);border:1px solid var(--line);border-radius:12px;
+  padding:18px;cursor:pointer;transition:.18s
+}
+.gc:hover{border-color:var(--green-l);transform:translateY(-2px);box-shadow:var(--shadow)}
+.gc-t{font-size:15px;font-weight:600;margin-bottom:6px;display:flex;align-items:center;gap:8px}
+.gc-t span{font-size:17px}
+.gc-s{font-size:13px;color:var(--gray);line-height:1.5}
+.gc-more{
+  font-size:12px;color:var(--green);font-weight:600;margin-top:10px;
+  display:flex;align-items:center;gap:4px
+}
+.gc-body{
+  display:none;margin-top:14px;padding-top:14px;border-top:1px solid var(--line);
+  font-size:13.5px;line-height:1.65;color:var(--ink-2)
+}
+.gc.open .gc-body{display:block;animation:fade .25s ease}
+.gc.open .gc-more{display:none}
+.gc-body p{margin-bottom:9px}
+.gc-body p:last-child{margin-bottom:0}
+.gc-body b{color:var(--ink);font-weight:600}
+.gc-body .tags{display:flex;gap:5px;flex-wrap:wrap;margin-top:9px}
+.gc-body .tg{
+  font-size:11.5px;padding:3px 9px;border-radius:6px;
+  background:var(--paper);border:1px solid var(--line);color:var(--gray)
+}
+.note{
+  background:var(--amber-bg);border-left:3px solid var(--amber);
+  padding:11px 14px;border-radius:0 8px 8px 0;margin-top:11px;
+  font-size:13px;color:var(--ink-2)
+}
+.note b{color:var(--amber)}
+
+/* word table */
+.wtab{width:100%;border-collapse:collapse;font-size:13.5px}
+.wtab th{
+  text-align:left;padding:11px 12px;background:var(--ink);color:var(--paper);
+  font-size:11.5px;letter-spacing:.05em;text-transform:uppercase;font-weight:700
+}
+.wtab th:first-child{border-radius:9px 0 0 0}
+.wtab th:last-child{border-radius:0 9px 0 0}
+.wtab td{padding:12px;border-bottom:1px solid var(--line);vertical-align:top}
+.wtab tr:last-child td{border-bottom:0}
+.wtab td:first-child{font-weight:600;white-space:nowrap}
+.wtab .think{color:var(--gray);font-style:italic}
+.tw{overflow-x:auto;border:1px solid var(--line);border-radius:10px}
+
+/* ── TRAINER ── */
+.tr-prog{
+  display:flex;align-items:center;gap:12px;margin-bottom:20px;
+  font-size:13px;color:var(--gray)
+}
+.tr-bar{flex:1;height:6px;background:var(--line);border-radius:999px;overflow:hidden}
+.tr-fill{height:100%;background:var(--green);border-radius:999px;transition:width .4s ease;width:0}
+.tr-prod{
+  font-family:'Fraunces',serif;font-size:19px;font-weight:600;margin-bottom:4px
+}
+.tr-claim{
+  display:inline-block;font-size:12px;padding:4px 11px;border-radius:999px;
+  background:var(--green-bg);color:var(--green);font-weight:600;margin-bottom:15px
+}
+.tr-list{
+  background:var(--paper);border:1px solid var(--line);border-radius:11px;
+  padding:16px;font-size:14px;line-height:1.85;margin-bottom:18px
+}
+.tr-q{font-size:14.5px;font-weight:600;margin-bottom:12px}
+.tr-opts{display:flex;flex-direction:column;gap:9px}
+.tr-o{
+  padding:14px 16px;border:1.5px solid var(--line);border-radius:10px;
+  background:var(--card);font-family:inherit;font-size:14px;text-align:left;
+  cursor:pointer;transition:.16s;color:var(--ink);line-height:1.45
+}
+.tr-o:hover:not(:disabled){border-color:var(--green);background:var(--green-bg)}
+.tr-o:disabled{cursor:default;opacity:.55}
+.tr-o.right{border-color:var(--green);background:var(--green-bg);opacity:1}
+.tr-o.wrong{border-color:var(--red);background:var(--red-bg);opacity:1}
+.tr-fb{
+  margin-top:16px;padding:16px;border-radius:11px;font-size:14px;line-height:1.6;
+  display:none
+}
+.tr-fb.on{display:block;animation:fade .3s ease}
+.tr-fb.good{background:var(--green-bg);border-left:3px solid var(--green)}
+.tr-fb.bad{background:var(--amber-bg);border-left:3px solid var(--amber)}
+.tr-fb b{display:block;margin-bottom:5px;font-size:14.5px}
+.tr-fb.good b{color:var(--green)}
+.tr-fb.bad b{color:var(--amber)}
+.tr-done{text-align:center;padding:34px 20px}
+.tr-score{font-family:'Fraunces',serif;font-size:52px;font-weight:700;color:var(--green);line-height:1}
+.tr-msg{font-size:15px;color:var(--gray);margin:12px 0 22px;max-width:400px;margin-left:auto;margin-right:auto}
+
+/* ── CTA ── */
+.cta{
+  background:var(--ink);color:var(--paper);border-radius:18px;
+  padding:38px 30px;text-align:center;margin:40px 0 0
+}
+.cta h2{
+  font-family:'Fraunces',serif;font-size:clamp(1.4rem,4vw,1.9rem);
+  font-weight:600;margin-bottom:12px;line-height:1.25
+}
+.cta p{font-size:15px;opacity:.82;max-width:460px;margin:0 auto 22px;line-height:1.6}
+.cta-meta{
+  display:flex;gap:20px;justify-content:center;flex-wrap:wrap;
+  margin-bottom:24px;font-size:13px;opacity:.75
+}
+.cta-meta span{display:flex;align-items:center;gap:6px}
+.cta-btn{
+  display:inline-block;background:var(--green-l);color:#fff;padding:15px 34px;
+  border-radius:11px;font-weight:600;font-size:15px;text-decoration:none;
+  transition:.18s;border:0;cursor:pointer;font-family:inherit
+}
+.cta-btn:hover{background:#4FB58A;transform:translateY(-2px)}
+.cta-fine{font-size:12.5px;opacity:.6;margin-top:16px}
+
+footer{
+  text-align:center;padding:40px 0 50px;font-size:13px;color:var(--gray-l);
+  border-top:1px solid var(--line);margin-top:44px
+}
+footer b{color:var(--ink-2);font-weight:600}
+footer p{margin-bottom:5px}
+
+@media(max-width:600px){
+  .wrap{padding:0 16px}
+  header{padding:34px 0 20px}
+  .card{padding:19px}
+  .tabs{max-width:100%}
+  .tab{font-size:12.5px;padding:10px 4px}
+  .grid{grid-template-columns:1fr}
+  .cta{padding:30px 22px}
+}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+<header>
+  <div class="eyebrow">Herramienta gratuita</div>
+  <h1>El Decodificador<br>de Etiquetas</h1>
+  <p class="sub">Pega la lista de ingredientes de cualquier producto y descubre en segundos qué estás comprando realmente.</p>
+  <p class="byline">Por <b>María del Carmen Puente</b> · Terapeuta Nutricional · 14 años de experiencia</p>
+
+  <nav class="tabs">
+    <button class="tab on" data-p="decoder">Decodificador</button>
+    <button class="tab" data-p="library">Biblioteca</button>
+    <button class="tab" data-p="trainer">Entrenador</button>
+  </nav>
+</header>
+
+<!-- ══════════ DECODIFICADOR ══════════ -->
+<section class="panel on" id="decoder">
+  <div class="card">
+    <div class="dec-label">Lista de ingredientes</div>
+    <p class="dec-hint">Voltea el empaque y copia (o escribe) la lista completa, tal como aparece.</p>
+    <textarea id="inp" placeholder="Ejemplo:&#10;Harina de trigo enriquecida, agua, jarabe de maíz de alta fructosa, aceite vegetal parcialmente hidrogenado, azúcar, sal, glutamato monosódico, benzoato de sodio, colorante amarillo 5..."></textarea>
+    <div class="row">
+      <button class="btn btn-p" id="go">Analizar ingredientes</button>
+      <button class="btn btn-s" id="clr">Limpiar</button>
+    </div>
+    <div class="samples">
+      <div class="samples-t">O prueba con un ejemplo real</div>
+      <div class="chips" id="chips"></div>
+    </div>
+  </div>
+
+  <div id="res"></div>
+</section>
+
+<!-- ══════════ BIBLIOTECA ══════════ -->
+<section class="panel" id="library">
+  <div class="lib-nav" id="libnav"></div>
+  <div id="libcontent"></div>
+</section>
+
+<!-- ══════════ ENTRENADOR ══════════ -->
+<section class="panel" id="trainer">
+  <div class="card" id="trbox"></div>
+</section>
+
+<!-- ══════════ CTA ══════════ -->
+<div class="cta">
+  <h2>Ya sabes qué NO comprar.<br>¿Y ahora con qué lo reemplazas?</h2>
+  <p>Leer etiquetas te protege. Pero no te dice qué poner en el carrito ni cómo alimentar a tu familia mañana. Eso es lo que trabajamos en la conferencia.</p>
+  <div class="cta-meta">
+    <span>◷ 17 de octubre</span>
+    <span>◉ Virtual en vivo</span>
+    <span>⏱ 2 horas</span>
+    <span>◈ $50.000 COP</span>
+  </div>
+  <a href="#" class="cta-btn" id="ctaBtn">Quiero mi cupo</a>
+  <p class="cta-fine">Nutrir el cuerpo, despertar el alma · Cupos limitados · Queda grabada</p>
+</div>
+
+<footer>
+  <p><b>El Decodificador de Etiquetas</b></p>
+  <p>María del Carmen Puente · Terapeuta Nutricional</p>
+  <p style="margin-top:10px;font-size:12px">Información educativa basada en las Resoluciones 5109 de 2005 y 333 de 2011 del Ministerio de Salud de Colombia. No sustituye consulta médica o nutricional individual.</p>
+</footer>
+
+</div>
+
+<script>
+/* ══════════════════ BASE DE DATOS ══════════════════ */
+
+const AZUCARES=[
+ {n:"jarabe de maíz de alta fructosa",g:"Jarabes"},{n:"jarabe de maiz de alta fructosa",g:"Jarabes"},
+ {n:"jarabe de maíz",g:"Jarabes"},{n:"jarabe de maiz",g:"Jarabes"},
+ {n:"jarabe de glucosa",g:"Jarabes"},{n:"jarabe de malta",g:"Jarabes"},
+ {n:"jarabe de arroz",g:"Jarabes"},{n:"jarabe de arce",g:"Jarabes"},
+ {n:"jarabe invertido",g:"Jarabes"},{n:"jarabe de sorgo",g:"Jarabes"},
+ {n:"jarabe de algarroba",g:"Jarabes"},{n:"sirope de agave",g:"Jarabes"},
+ {n:"jarabe de agave",g:"Jarabes"},{n:"melaza",g:"Jarabes"},{n:"miel de caña",g:"Jarabes"},
+ {n:"miel de cana",g:"Jarabes"},
+ {n:"sacarosa",g:"Termina en -osa"},{n:"fructosa",g:"Termina en -osa"},
+ {n:"glucosa",g:"Termina en -osa"},{n:"dextrosa",g:"Termina en -osa"},
+ {n:"maltosa",g:"Termina en -osa"},{n:"lactosa",g:"Termina en -osa"},
+ {n:"galactosa",g:"Termina en -osa"},{n:"levulosa",g:"Termina en -osa"},
+ {n:"trehalosa",g:"Termina en -osa"},{n:"tagatosa",g:"Termina en -osa"},
+ {n:"isoglucosa",g:"Termina en -osa"},{n:"ribosa",g:"Termina en -osa"},
+ {n:"concentrado de jugo de fruta",g:"Extractos y jugos"},
+ {n:"jugo de caña evaporado",g:"Extractos y jugos"},
+ {n:"jugo de cana evaporado",g:"Extractos y jugos"},
+ {n:"extracto de malta",g:"Extractos y jugos"},{n:"malta de cebada",g:"Extractos y jugos"},
+ {n:"néctar de fruta",g:"Extractos y jugos"},{n:"nectar de fruta",g:"Extractos y jugos"},
+ {n:"puré de fruta concentrado",g:"Extractos y jugos"},
+ {n:"zumo concentrado",g:"Extractos y jugos"},{n:"jugo concentrado",g:"Extractos y jugos"},
+ {n:"jugo de uva concentrado",g:"Extractos y jugos"},{n:"dátil en pasta",g:"Extractos y jugos"},
+ {n:"maltodextrina",g:"No suena a azúcar"},{n:"dextrina",g:"No suena a azúcar"},
+ {n:"azúcar invertido",g:"No suena a azúcar"},{n:"azucar invertido",g:"No suena a azúcar"},
+ {n:"caramelo",g:"No suena a azúcar"},{n:"panela",g:"No suena a azúcar"},
+ {n:"piloncillo",g:"No suena a azúcar"},{n:"rapadura",g:"No suena a azúcar"},
+ {n:"azúcar de coco",g:"No suena a azúcar"},{n:"azúcar mascabado",g:"No suena a azúcar"},
+ {n:"demerara",g:"No suena a azúcar"},{n:"turbinado",g:"No suena a azúcar"},
+ {n:"muscovado",g:"No suena a azúcar"},
+ {n:"sólidos de jarabe de maíz",g:"No suena a azúcar"},
+ {n:"azúcar morena",g:"Azúcar directa"},{n:"azucar morena",g:"Azúcar directa"},
+ {n:"azúcar",g:"Azúcar directa"},{n:"azucar",g:"Azúcar directa"},
+ {n:"miel",g:"Azúcar directa"}
+];
+
+const ADITIVOS=[
+ // Glutamato
+ {n:"glutamato monosódico",f:"Glutamato",s:"alto",d:"Potenciador de sabor que estimula el apetito. Es la razón por la que cuesta comer solo un poco."},
+ {n:"glutamato monosodico",f:"Glutamato",s:"alto",d:"Potenciador de sabor que estimula el apetito."},
+ {n:"glutamato de sodio",f:"Glutamato",s:"alto",d:"Potenciador de sabor que estimula el apetito."},
+ {n:"ácido glutámico",f:"Glutamato",s:"alto",d:"Forma libre del glutamato. Mismo efecto potenciador."},
+ {n:"acido glutamico",f:"Glutamato",s:"alto",d:"Forma libre del glutamato."},
+ {n:"e-621",f:"Glutamato",s:"alto",d:"Código internacional del glutamato monosódico."},
+ {n:"e621",f:"Glutamato",s:"alto",d:"Código internacional del glutamato monosódico."},
+ {n:"e-620",f:"Glutamato",s:"alto",d:"Ácido glutámico."},
+ {n:"e-622",f:"Glutamato",s:"alto",d:"Glutamato de potasio."},
+ {n:"e-623",f:"Glutamato",s:"alto",d:"Glutamato de calcio."},
+ {n:"e-625",f:"Glutamato",s:"alto",d:"Glutamato de magnesio."},
+ {n:"e-627",f:"Glutamato",s:"alto",d:"Multiplicador: potencia el efecto del glutamato hasta diez veces."},
+ {n:"e-631",f:"Glutamato",s:"alto",d:"Multiplicador: potencia el efecto del glutamato hasta diez veces."},
+ {n:"extracto de levadura",f:"Glutamato",s:"medio",d:"Fuente de glutamato libre. Aporta el mismo efecto sin usar la palabra."},
+ {n:"proteína vegetal hidrolizada",f:"Glutamato",s:"medio",d:"Fuente de glutamato libre camuflada."},
+ {n:"proteina vegetal hidrolizada",f:"Glutamato",s:"medio",d:"Fuente de glutamato libre camuflada."},
+ {n:"caseinato de sodio",f:"Glutamato",s:"medio",d:"Fuente de glutamato libre."},
+ {n:"caseinato de calcio",f:"Glutamato",s:"medio",d:"Fuente de glutamato libre."},
+ {n:"caldo deshidratado",f:"Glutamato",s:"medio",d:"Suele aportar glutamato libre."},
+ {n:"saborizante natural",f:"Glutamato",s:"medio",d:"Término genérico que puede incluir fuentes de glutamato."},
+ // Grasas
+ {n:"parcialmente hidrogenado",f:"Grasas trans",s:"alto",d:"Indica presencia de grasas trans, aunque la tabla declare 0 g."},
+ {n:"parcialmente hidrogenada",f:"Grasas trans",s:"alto",d:"Indica presencia de grasas trans, aunque la tabla declare 0 g."},
+ {n:"aceite vegetal hidrogenado",f:"Grasas trans",s:"alto",d:"Proceso que genera grasas trans."},
+ {n:"grasa hidrogenada",f:"Grasas trans",s:"alto",d:"Proceso que genera grasas trans."},
+ {n:"aceites vegetales",f:"Aceites refinados",s:"medio",d:"Término genérico que suele agrupar palma, palmiste, soya o algodón de baja calidad."},
+ {n:"aceite vegetal",f:"Aceites refinados",s:"medio",d:"Genérico: no sabes de qué aceite se trata."},
+ {n:"aceite de palma",f:"Aceites refinados",s:"medio",d:"Alto en grasa saturada. Muy usado por su bajo costo."},
+ {n:"grasa vegetal",f:"Aceites refinados",s:"medio",d:"Término genérico de baja transparencia."},
+ {n:"monoglicéridos",f:"Aceites refinados",s:"bajo",d:"Emulsionante que también aporta grasas al producto."},
+ {n:"diglicéridos",f:"Aceites refinados",s:"bajo",d:"Emulsionante que también aporta grasas al producto."},
+ // Benzoatos
+ {n:"benzoato de sodio",f:"Benzoatos",s:"medio",d:"Conservante. Con vitamina C puede formar benceno."},
+ {n:"benzoato de potasio",f:"Benzoatos",s:"medio",d:"Conservante de la misma familia."},
+ {n:"ácido benzoico",f:"Benzoatos",s:"medio",d:"Conservante de la misma familia."},
+ {n:"acido benzoico",f:"Benzoatos",s:"medio",d:"Conservante de la misma familia."},
+ {n:"e-210",f:"Benzoatos",s:"medio",d:"Ácido benzoico."},
+ {n:"e-211",f:"Benzoatos",s:"medio",d:"Benzoato de sodio."},
+ {n:"e-212",f:"Benzoatos",s:"medio",d:"Benzoato de potasio."},
+ {n:"e-213",f:"Benzoatos",s:"medio",d:"Benzoato de calcio."},
+ // Nitritos
+ {n:"nitrito de sodio",f:"Nitritos y nitratos",s:"alto",d:"Al cocinarse a alta temperatura forma nitrosaminas."},
+ {n:"nitrato de sodio",f:"Nitritos y nitratos",s:"alto",d:"Al cocinarse a alta temperatura forma nitrosaminas."},
+ {n:"nitrito de potasio",f:"Nitritos y nitratos",s:"alto",d:"Misma familia."},
+ {n:"nitrato de potasio",f:"Nitritos y nitratos",s:"alto",d:"Misma familia."},
+ {n:"e-249",f:"Nitritos y nitratos",s:"alto",d:"Nitrito de potasio."},
+ {n:"e-250",f:"Nitritos y nitratos",s:"alto",d:"Nitrito de sodio."},
+ {n:"e-251",f:"Nitritos y nitratos",s:"alto",d:"Nitrato de sodio."},
+ {n:"e-252",f:"Nitritos y nitratos",s:"alto",d:"Nitrato de potasio."},
+ {n:"extracto de apio",f:"Nitritos y nitratos",s:"medio",d:"Nitratos naturales. El truco del «sin nitritos añadidos»."},
+ {n:"polvo de acelga",f:"Nitritos y nitratos",s:"medio",d:"Nitratos naturales. Se comporta igual al cocinarse."},
+ // Colorantes
+ {n:"tartrazina",f:"Colorantes",s:"medio",d:"Colorante derivado del petróleo. Vinculado con hiperactividad infantil."},
+ {n:"amarillo 5",f:"Colorantes",s:"medio",d:"Tartrazina. Vinculado con hiperactividad infantil."},
+ {n:"e-102",f:"Colorantes",s:"medio",d:"Tartrazina."},
+ {n:"amarillo ocaso",f:"Colorantes",s:"medio",d:"Colorante artificial. La UE exige advertencia."},
+ {n:"e-110",f:"Colorantes",s:"medio",d:"Amarillo ocaso."},
+ {n:"rojo allura",f:"Colorantes",s:"medio",d:"Colorante artificial."},
+ {n:"e-129",f:"Colorantes",s:"medio",d:"Rojo allura."},
+ {n:"carmoisina",f:"Colorantes",s:"medio",d:"Colorante artificial."},
+ {n:"e-122",f:"Colorantes",s:"medio",d:"Rojo carmoisina."},
+ {n:"azul brillante",f:"Colorantes",s:"medio",d:"Colorante artificial."},
+ {n:"e-133",f:"Colorantes",s:"medio",d:"Azul brillante."},
+ // Sulfitos
+ {n:"dióxido de azufre",f:"Sulfitos",s:"medio",d:"Delicado para personas con asma o alergias respiratorias."},
+ {n:"dioxido de azufre",f:"Sulfitos",s:"medio",d:"Delicado para personas con asma."},
+ {n:"metabisulfito de sodio",f:"Sulfitos",s:"medio",d:"Misma familia."},
+ {n:"metabisulfito de potasio",f:"Sulfitos",s:"medio",d:"Misma familia."},
+ {n:"sulfito de sodio",f:"Sulfitos",s:"medio",d:"Misma familia."},
+ {n:"e-220",f:"Sulfitos",s:"medio",d:"Dióxido de azufre."},
+ {n:"e-223",f:"Sulfitos",s:"medio",d:"Metabisulfito de sodio."},
+ {n:"e-224",f:"Sulfitos",s:"medio",d:"Metabisulfito de potasio."},
+ // Edulcorantes
+ {n:"aspartamo",f:"Edulcorantes",s:"medio",d:"200 veces más dulce que el azúcar. Permite declarar cero calorías."},
+ {n:"aspartame",f:"Edulcorantes",s:"medio",d:"200 veces más dulce que el azúcar."},
+ {n:"e-951",f:"Edulcorantes",s:"medio",d:"Aspartamo."},
+ {n:"fenilalanina",f:"Edulcorantes",s:"alto",d:"La advertencia «contiene fenilalanina» revela aspartamo aunque no aparezca la palabra."},
+ {n:"acesulfame",f:"Edulcorantes",s:"bajo",d:"Edulcorante artificial, suele combinarse con aspartamo."},
+ {n:"e-950",f:"Edulcorantes",s:"bajo",d:"Acesulfamo K."},
+ {n:"sucralosa",f:"Edulcorantes",s:"bajo",d:"Edulcorante artificial."},
+ {n:"e-955",f:"Edulcorantes",s:"bajo",d:"Sucralosa."},
+ {n:"sacarina",f:"Edulcorantes",s:"bajo",d:"Edulcorante artificial."},
+ // Otros
+ {n:"carragenano",f:"Espesantes",s:"bajo",d:"Extracto de alga. Hay debate sobre inflamación intestinal en personas sensibles."},
+ {n:"e-407",f:"Espesantes",s:"bajo",d:"Carragenano."},
+ {n:"bht",f:"Antioxidantes",s:"medio",d:"Antioxidante sintético. Restringido en varios países."},
+ {n:"bha",f:"Antioxidantes",s:"medio",d:"Antioxidante sintético. Restringido en varios países."},
+ {n:"e-320",f:"Antioxidantes",s:"medio",d:"BHA."},
+ {n:"e-321",f:"Antioxidantes",s:"medio",d:"BHT."},
+ {n:"jarabe de fructosa",f:"Edulcorantes",s:"alto",d:"Azúcar líquido de alta absorción."}
+];
+
+const REFINADOS=[
+ "harina de trigo enriquecida","harina de trigo","harina refinada","harina blanca",
+ "almidón modificado","almidon modificado","almidón de maíz","almidon de maiz",
+ "fécula de maíz","fecula de maiz","harina de maíz precocida"
+];
+
+const BUENOS=[
+ {n:"harina integral",d:"Grano entero: conserva fibra, vitaminas y minerales."},
+ {n:"avena integral",d:"Grano entero rico en fibra soluble."},
+ {n:"quinua",d:"Proteína completa de origen vegetal."},
+ {n:"quinoa",d:"Proteína completa de origen vegetal."},
+ {n:"aceite de oliva extra virgen",d:"Grasa de alta calidad, prensado en frío."},
+ {n:"aceite de oliva",d:"Grasa de buena calidad."},
+ {n:"aceite de coco",d:"Grasa estable al calor."},
+ {n:"lentejas",d:"Legumbre rica en proteína y fibra."},
+ {n:"garbanzo",d:"Legumbre rica en proteína y fibra."},
+ {n:"frijol",d:"Legumbre rica en proteína y fibra."},
+ {n:"sal marina",d:"Sal con minerales, menos procesada."},
+ {n:"levadura",d:"Fermento natural."},
+ {n:"agua",d:"Neutro, pero si está entre los tres primeros estás pagando volumen."},
+ {n:"leche entera",d:"Alimento base sin procesar en exceso."},
+ {n:"huevo",d:"Proteína completa."},
+ {n:"almendras",d:"Grasa saludable y proteína."},
+ {n:"semillas de chía",d:"Fibra y omega 3."},
+ {n:"cacao",d:"Antioxidantes naturales."},
+ {n:"tomate",d:"Alimento real."},
+ {n:"cebolla",d:"Alimento real."},
+ {n:"ajo",d:"Alimento real."},
+ {n:"especias",d:"Sabor sin aditivos."}
+];
+
+const EJEMPLOS=[
+ {t:"Pan «integral» de supermercado", x:"Harina de trigo enriquecida, agua, jarabe de maíz de alta fructosa, harina integral de trigo, levadura, aceite vegetal, azúcar, sal, monoglicéridos, propionato de calcio, dextrosa"},
+ {t:"Jamón «artesanal»", x:"Carne de cerdo, agua, almidón modificado, sal, azúcar, extracto de apio, proteína vegetal hidrolizada, nitrito de sodio, ácido ascórbico, saborizante natural"},
+ {t:"Refresco light", x:"Agua carbonatada, ácido cítrico, benzoato de sodio, aspartamo, acesulfame K, colorante caramelo, saborizantes naturales, ácido ascórbico. Contiene una fuente de fenilalanina"},
+ {t:"Cereal infantil", x:"Harina de maíz, azúcar, jarabe de maíz, sal, tartrazina, amarillo ocaso, BHT, maltodextrina, saborizante artificial, vitaminas y minerales"},
+ {t:"Pan integral real", x:"Harina integral de trigo, agua, levadura, sal marina, semillas de chía"}
+];
+
+/* ══════════════════ MOTOR DE ANÁLISIS ══════════════════ */
+
+const norm = s => s.toLowerCase()
+  .normalize("NFD").replace(/[\u0300-\u036f]/g,"")
+  .replace(/\s+/g," ").trim();
+
+function splitIngredientes(txt){
+  return txt.replace(/\n/g,",").split(/[,;.]/)
+    .map(s=>s.trim()).filter(s=>s.length>1);
+}
+
+function analizar(txt){
+  const t = norm(txt);
+  const partes = splitIngredientes(txt);
+  const tresPrimeros = partes.slice(0,3);
+
+  // azúcares
+  const azMap = new Map();
+  AZUCARES.forEach(a=>{
+    const na = norm(a.n);
+    if(t.includes(na)){
+      // evitar duplicar variantes acentuadas
+      const key = a.g+"|"+na;
+      let dup=false;
+      azMap.forEach((v,k)=>{ if(k!==key && (na.includes(v.raw)||v.raw.includes(na)) && v.g===a.g) dup=true; });
+      if(!dup) azMap.set(key,{nombre:a.n,g:a.g,raw:na});
+    }
+  });
+  // limpiar sub-cadenas (ej: "azucar" dentro de "azucar invertido")
+  const azArr=[...azMap.values()].sort((a,b)=>b.raw.length-a.raw.length);
+  const azFinal=[];
+  azArr.forEach(a=>{
+    if(!azFinal.some(b=>b.raw.includes(a.raw) && b.raw!==a.raw)) azFinal.push(a);
+  });
+
+  // aditivos
+  const adMap=new Map();
+  ADITIVOS.forEach(a=>{
+    const na=norm(a.n);
+    if(t.includes(na)){
+      if(!adMap.has(a.f)) adMap.set(a.f,{familia:a.f,hits:[],sev:"bajo"});
+      const e=adMap.get(a.f);
+      if(!e.hits.some(h=>norm(h.n).includes(na)||na.includes(norm(h.n))))
+        e.hits.push({n:a.n,d:a.d,s:a.s});
+      const rank={bajo:1,medio:2,alto:3};
+      if(rank[a.s]>rank[e.sev]) e.sev=a.s;
+    }
+  });
+
+  // refinados en 3 primeros
+  const refi = tresPrimeros.filter(p=>REFINADOS.some(r=>norm(p).includes(norm(r))));
+  const azEn3 = tresPrimeros.filter(p=>azFinal.some(a=>norm(p).includes(a.raw)));
+  const aguaEn3 = tresPrimeros.filter(p=>norm(p)==="agua");
+  const grasaEn3 = tresPrimeros.filter(p=>/aceite|grasa|manteca/.test(norm(p)));
+
+  // buenos
+  const bue=[];
+  BUENOS.forEach(b=>{ if(t.includes(norm(b.n)) && !bue.some(x=>norm(x.n).includes(norm(b.n)))) bue.push(b); });
+
+  // score
+  let score=100;
+  score -= azFinal.length*9;
+  adMap.forEach(a=>{ score -= a.sev==="alto"?16:a.sev==="medio"?9:4; });
+  score -= refi.length*11;
+  score -= azEn3.length*14;
+  score -= grasaEn3.length*7;
+  score += Math.min(bue.length*3,12);
+  score = Math.max(0,Math.min(100,score));
+
+  return {partes,tresPrimeros,azucares:azFinal,aditivos:[...adMap.values()],
+          refinados:refi,azEn3,aguaEn3,grasaEn3,buenos:bue,score,total:partes.length};
+}
+
+function resaltar(txt,r){
+  const partes = txt.replace(/\n/g,", ").split(/([,;.])/);
+  return partes.map(p=>{
+    const np=norm(p);
+    if(!np||np.length<2) return p;
+    if(r.azucares.some(a=>np.includes(a.raw))) return `<mark class="s">${p.trim()}</mark>`;
+    let ad=null;
+    r.aditivos.forEach(f=>f.hits.forEach(h=>{ if(np.includes(norm(h.n))) ad=h; }));
+    if(ad) return `<mark class="a">${p.trim()}</mark>`;
+    if(REFINADOS.some(x=>np.includes(norm(x)))) return `<mark class="a">${p.trim()}</mark>`;
+    if(r.buenos.some(b=>np.includes(norm(b.n)))) return `<mark class="f">${p.trim()}</mark>`;
+    return p;
+  }).join("");
+}
+
+function render(txt){
+  const r=analizar(txt);
+  const box=document.getElementById("res");
+  let h="";
+
+  // veredicto
+  let cls,tit,msg;
+  if(r.score>=72){cls="v-ok";tit="Producto razonablemente limpio";
+    msg="La lista es corta y reconocible, sin señales importantes de alarma. Sigue verificando el tamaño de porción en la tabla nutricional.";}
+  else if(r.score>=42){cls="v-mid";tit="Requiere atención";
+    msg="Hay elementos que vale la pena mirar de cerca. Revisa los hallazgos abajo y decide si este producto merece un lugar en tu despensa.";}
+  else{cls="v-bad";tit="Preparación industrial";
+    msg="Este producto tiene varias señales de alarma acumuladas. Más que un alimento, es una fórmula diseñada para durar y para que sepa bien.";}
+
+  h+=`<div class="verdict ${cls}">
+    <div class="v-head"><span class="v-dot"></span><span class="v-title">${tit}</span></div>
+    <p class="v-text">${msg}</p></div>`;
+
+  // stats
+  h+=`<div class="stats">
+    <div class="stat"><div class="stat-n">${r.total}</div><div class="stat-l">ingredientes</div></div>
+    <div class="stat"><div class="stat-n" style="color:var(--red)">${r.azucares.length}</div><div class="stat-l">azúcares</div></div>
+    <div class="stat"><div class="stat-n" style="color:var(--amber)">${r.aditivos.length}</div><div class="stat-l">familias de aditivos</div></div>
+    <div class="stat"><div class="stat-n" style="color:var(--green)">${r.score}</div><div class="stat-l">puntaje /100</div></div>
+  </div>`;
+
+  h+=`<div class="card">`;
+
+  // regla de los tres primeros
+  h+=`<div class="sect"><div class="sect-h">Regla de los tres primeros</div><div class="tf">`;
+  r.tresPrimeros.forEach((p,i)=>{
+    const np=norm(p);
+    const esAz=r.azucares.some(a=>np.includes(a.raw));
+    const esRef=REFINADOS.some(x=>np.includes(norm(x)));
+    const esAgua=np==="agua";
+    const esGrasa=/aceite|grasa|manteca/.test(np);
+    let tag="",tc="tag-g";
+    if(esAz){tag="azúcar";tc="tag-r";}
+    else if(esRef){tag="refinado";tc="tag-r";}
+    else if(esAgua){tag="relleno";tc="tag-r";}
+    else if(esGrasa){tag="grasa";tc="tag-r";}
+    else{tag="ok";tc="tag-g";}
+    h+=`<div class="tf-i"><span class="tf-n">${i+1}</span><span class="tf-x">${p}</span><span class="tf-tag ${tc}">${tag}</span></div>`;
+  });
+  h+=`</div>`;
+
+  const probl=r.azEn3.length+r.refinados.length+r.aguaEn3.length+r.grasaEn3.length;
+  if(probl>=2) h+=`<div class="note"><b>Señal fuerte.</b> ${probl} de los tres primeros ingredientes son azúcar, harina refinada, agua o grasa. Esos tres lugares representan la mayor parte del producto, sin importar lo que diga la portada.</div>`;
+  else if(probl===1) h+=`<div class="note"><b>Mira con calma.</b> Uno de los tres primeros ingredientes merece atención. No es determinante por sí solo, pero súmalo al resto de hallazgos.</div>`;
+  h+=`</div>`;
+
+  // azúcares
+  if(r.azucares.length){
+    h+=`<div class="sect"><div class="sect-h">Azúcares encontrados · ${r.azucares.length}</div>`;
+    const porG={};
+    r.azucares.forEach(a=>{(porG[a.g]=porG[a.g]||[]).push(a.nombre)});
+    Object.entries(porG).forEach(([g,arr])=>{
+      h+=`<div class="find"><div class="f-ico f-s">◆</div><div class="f-body">
+        <div class="f-t">${g}</div><div class="f-d">${arr.join(" · ")}</div></div></div>`;
+    });
+    if(r.azucares.length>=3)
+      h+=`<div class="note"><b>Postre disfrazado.</b> Encontramos ${r.azucares.length} azúcares con nombres distintos. Al repartir el dulce entre varios nombres, cada uno aparece más abajo en la lista y ninguno encabeza. Si los sumaras, probablemente el azúcar sería el ingrediente principal.</div>`;
+    h+=`</div>`;
+  }
+
+  // aditivos
+  if(r.aditivos.length){
+    h+=`<div class="sect"><div class="sect-h">Aditivos por familia</div>`;
+    const ord={alto:0,medio:1,bajo:2};
+    r.aditivos.sort((a,b)=>ord[a.sev]-ord[b.sev]).forEach(f=>{
+      const ic=f.sev==="alto"?"f-s":"f-a";
+      h+=`<div class="find"><div class="f-ico ${ic}">●</div><div class="f-body">
+        <div class="f-t">${f.familia}</div>
+        <div class="f-d">${f.hits.map(x=>`<b>${x.n}</b> — ${x.d}`).join("<br>")}</div></div></div>`;
+    });
+    h+=`</div>`;
+  }
+
+  // buenos
+  if(r.buenos.length){
+    h+=`<div class="sect"><div class="sect-h">Ingredientes reconocibles</div>`;
+    r.buenos.slice(0,6).forEach(b=>{
+      h+=`<div class="find"><div class="f-ico f-g">✓</div><div class="f-body">
+        <div class="f-t">${b.n}</div><div class="f-d">${b.d}</div></div></div>`;
+    });
+    h+=`</div>`;
+  }
+
+  // texto resaltado
+  h+=`<div class="sect"><div class="sect-h">Tu lista, marcada</div>
+    <div class="hl-box">${resaltar(txt,r)}</div>
+    <div class="legend">
+      <span class="lg"><i style="background:#F5D5D5"></i>Azúcar</span>
+      <span class="lg"><i style="background:#F8E3BC"></i>Aditivo o refinado</span>
+      <span class="lg"><i style="background:#D6E8DE"></i>Alimento reconocible</span>
+    </div></div>`;
+
+  // regla 5 ingredientes
+  if(r.total<=5) h+=`<div class="note" style="background:var(--green-bg);border-left-color:var(--green)"><b style="color:var(--green)">Regla de los cinco.</b> Este producto tiene ${r.total} ingredientes y todos son pronunciables. Probablemente sea comida, no una fórmula industrial.</div>`;
+  else if(r.total>=15) h+=`<div class="note"><b>Lista larga.</b> ${r.total} ingredientes. Cuando una lista supera los quince elementos y buena parte son códigos, estás frente a una preparación industrial que imita comida.</div>`;
+
+  h+=`</div>`;
+
+  box.innerHTML=h;
+  box.classList.add("on");
+  box.scrollIntoView({behavior:"smooth",block:"start"});
+}
+
+/* ══════════════════ BIBLIOTECA ══════════════════ */
+
+const LIB=[
+ {id:"reglas",t:"Las reglas",intro:"Tres principios que se aplican a cualquier producto, sin memorizar nada.",
+  cards:[
+   {i:"①",t:"La Regla de los Tres Primeros",s:"El principio central de toda la guía",
+    b:`<p>Por ley, los ingredientes se listan de mayor a menor cantidad. El primero es el que más hay, el último el que menos. <b>Siempre, sin excepción.</b></p>
+       <p>Los tres primeros representan, en la mayoría de productos, más de la mitad de lo que compras. No necesitas leer veinte ingredientes: necesitas leer tres.</p>
+       <p><b>Las tres preguntas:</b><br>1. ¿Aparece azúcar, aceite refinado, harina refinada o agua entre ellos?<br>2. ¿El ingrediente que da nombre al producto está primero?<br>3. ¿Dos de los tres son azúcar, grasa o aditivos?</p>
+       <div class="note"><b>Ejemplo.</b> Un pan integral real empieza con «harina integral de trigo». Si empieza con «harina de trigo enriquecida» y la integral aparece en cuarto lugar, tienes pan blanco con empaque color café.</div>`},
+   {i:"②",t:"La Regla de los Cinco",s:"El filtro rápido",
+    b:`<p>Si un producto tiene <b>cinco ingredientes o menos</b> y puedes pronunciarlos todos, probablemente sea comida.</p>
+       <p>Si tiene veinte ingredientes y la mitad son códigos, es una fórmula industrial que imita comida.</p>
+       <p>No es infalible. Es un filtro de tres segundos que acierta la mayoría de las veces.</p>`},
+   {i:"③",t:"La Regla del 5 y el 20",s:"Para leer la tabla nutricional",
+    b:`<p>El porcentaje de Valor Diario (%VD) te dice qué tanto aporta una porción de tu necesidad del día. Criterio oficial de MinSalud:</p>
+       <p><b>5% o menos = BAJO.</b> Ideal para lo que quieres limitar: sodio, grasa saturada, colesterol.</p>
+       <p><b>6% a 19% = MEDIO.</b> Zona intermedia, depende de cuánto consumas.</p>
+       <p><b>20% o más = ALTO.</b> Ideal para lo que quieres aumentar: fibra, calcio, hierro. Alarma para lo que quieres limitar.</p>
+       <div class="note"><b>Ojo con la porción.</b> Todos los números se refieren a UNA porción, no al paquete. Un paquete puede declarar 120 calorías por porción de dos galletas, cuando trae doce.</div>`}
+  ]},
+
+ {id:"azucar",t:"Azúcares",intro:"El azúcar aparece con más de cuarenta nombres distintos. La industria usa varios a la vez para que ninguno encabece la lista.",
+  cards:[
+   {i:"◆",t:"Grupo 1 · Termina en «-osa»",s:"La pista más fácil de todas",
+    b:`<p>La terminación «-osa» es la firma química de los azúcares simples. Si termina en -osa y no es «celulosa», es azúcar.</p>
+       <div class="tags"><span class="tg">Sacarosa</span><span class="tg">Fructosa</span><span class="tg">Glucosa</span><span class="tg">Dextrosa</span><span class="tg">Maltosa</span><span class="tg">Lactosa</span><span class="tg">Galactosa</span><span class="tg">Levulosa</span><span class="tg">Trehalosa</span><span class="tg">Tagatosa</span><span class="tg">Isoglucosa</span><span class="tg">Ribosa</span></div>`},
+   {i:"◆",t:"Grupo 2 · Jarabes y siropes",s:"Azúcar en forma líquida",
+    b:`<p>El jarabe de maíz de alta fructosa es el más común en productos industriales por su bajo costo.</p>
+       <div class="tags"><span class="tg">Jarabe de maíz de alta fructosa</span><span class="tg">Jarabe de glucosa</span><span class="tg">Jarabe de malta</span><span class="tg">Jarabe de arroz</span><span class="tg">Jarabe de arce</span><span class="tg">Sirope de agave</span><span class="tg">Melaza</span><span class="tg">Miel de caña</span><span class="tg">Jarabe invertido</span></div>
+       <div class="note"><b>Ojo con el agave y la miel.</b> Son azúcar. Que vengan de una planta no cambia lo que hacen en tu cuerpo.</div>`},
+   {i:"◆",t:"Grupo 3 · Extractos y jugos",s:"El grupo más engañoso",
+    b:`<p>Este es el más engañoso porque suena a fruta. «Endulzado solo con jugo de fruta» significa endulzado con azúcar de fruta concentrado — azúcar sin la fibra que lo acompañaba.</p>
+       <div class="tags"><span class="tg">Concentrado de jugo de fruta</span><span class="tg">Jugo de caña evaporado</span><span class="tg">Extracto de malta</span><span class="tg">Néctar de fruta</span><span class="tg">Puré de fruta concentrado</span><span class="tg">Zumo concentrado</span><span class="tg">Dátil en pasta</span></div>`},
+   {i:"◆",t:"Grupo 4 · No suenan a azúcar",s:"Los que pasan desapercibidos",
+    b:`<p>Nombres que no despiertan sospecha pero se comportan igual en el cuerpo.</p>
+       <div class="tags"><span class="tg">Maltodextrina</span><span class="tg">Dextrina</span><span class="tg">Azúcar invertido</span><span class="tg">Caramelo</span><span class="tg">Panela</span><span class="tg">Piloncillo</span><span class="tg">Azúcar de coco</span><span class="tg">Demerara</span><span class="tg">Turbinado</span><span class="tg">Muscovado</span></div>
+       <div class="note"><b>La maltodextrina merece atención.</b> Tiene índice glucémico más alto que el azúcar de mesa y aparece en productos «sin azúcar» porque técnicamente es un carbohidrato, no un azúcar.</div>`}
+  ]},
+
+ {id:"aditivos",t:"Aditivos",intro:"Hay cientos de aditivos autorizados. No necesitas conocerlos todos: necesitas reconocer seis familias que aparecen constantemente.",
+  cards:[
+   {i:"●",t:"Glutamato monosódico",s:"El que crea el antojo",
+    b:`<p><b>Qué hace:</b> resalta el sabor umami y estimula el cerebro para que sigas comiendo. No es casualidad que no puedas comer solo una papa.</p>
+       <p><b>Cómo se declara:</b> glutamato monosódico, glutamato de sodio, ácido glutámico, E-621, E-620, E-622 a E-625.</p>
+       <p><b>Cómo se disfraza:</b> extracto de levadura, proteína vegetal hidrolizada, caseinato de sodio o calcio, caldo deshidratado, saborizante natural. Todos aportan glutamato libre sin usar la palabra.</p>
+       <div class="note"><b>Multiplicadores.</b> E-627 y E-631 no son glutamato, pero potencian su efecto hasta diez veces. Cuando aparecen junto al E-621, el efecto es mucho mayor.</div>`},
+   {i:"●",t:"Benzoatos",s:"Conservantes de bebidas y salsas",
+    b:`<p><b>Dónde aparecen:</b> refrescos, jugos industriales, salsas picantes, kétchup, aderezos.</p>
+       <p><b>Cómo se declaran:</b> benzoato de sodio, benzoato de potasio, ácido benzoico, E-210 a E-213.</p>
+       <div class="note"><b>Vale la pena saberlo.</b> Cuando el benzoato de sodio se combina con vitamina C puede formar benceno. En 2005 la FDA encontró niveles elevados en algunas bebidas que combinaban ambos y muchas marcas reformularon. Revisa si tu bebida trae los dos juntos.</div>`},
+   {i:"●",t:"Nitritos y nitratos",s:"El color rosado de los embutidos",
+    b:`<p><b>Qué hacen:</b> conservan, fijan el color rosado y dan el sabor característico de las carnes frías.</p>
+       <p><b>Cómo se declaran:</b> nitrito de sodio, nitrato de sodio, nitrito o nitrato de potasio, E-249 a E-252.</p>
+       <p><b>Por qué importa:</b> al freír o asar a alta temperatura forman nitrosaminas. La IARC (agencia de la OMS) clasifica la carne procesada como carcinógeno del Grupo 1.</p>
+       <div class="note"><b>El truco del empaque premium.</b> Muchas marcas dicen «sin nitritos ni nitratos añadidos» pero incluyen extracto de apio o polvo de acelga: vegetales que concentran nitratos naturales y se comportan igual al cocinarse.</div>
+       <p style="margin-top:10px"><b>Cómo reconocer uno limpio:</b> color grisáceo o rosa pálido mate, no rosa brillante. Lista corta: carne, agua, sal y especias. Si tiene más de seis líneas, no es artesanal.</p>`},
+   {i:"●",t:"Colorantes artificiales",s:"Derivados del petróleo",
+    b:`<p><b>Cuáles vigilar:</b> tartrazina o amarillo 5 (E-102), amarillo ocaso (E-110), rojo allura (E-129), carmoisina (E-122), azul brillante (E-133).</p>
+       <p><b>La evidencia:</b> el estudio de la Universidad de Southampton los vinculó con hiperactividad y falta de concentración en niños. La Unión Europea exige desde entonces una advertencia impresa. En Colombia esa advertencia no es obligatoria.</p>
+       <p><b>Dónde están:</b> gelatinas, refrescos en polvo, dulces, cereales infantiles, snacks de colores intensos.</p>`},
+   {i:"●",t:"Sulfitos",s:"Vino y frutos secos",
+    b:`<p><b>Cómo se declaran:</b> dióxido de azufre, sulfito de sodio, metabisulfito de sodio o potasio, E-220 a E-228.</p>
+       <p><b>Dónde aparecen:</b> vinos, frutos secos deshidratados (esos duraznos y orejones de color naranja intenso), papas congeladas, camarones, vinagres.</p>
+       <div class="note"><b>Para quién importa especialmente.</b> Personas con asma o alergias respiratorias: los sulfitos pueden desencadenar crisis. Un fruto seco de color apagado y oscuro es señal de que no fue sulfitado.</div>`},
+   {i:"●",t:"Aspartamo",s:"El que permite decir «cero calorías»",
+    b:`<p><b>Qué es:</b> edulcorante hasta 200 veces más dulce que el azúcar. Permite declarar cero calorías legalmente.</p>
+       <p><b>Dónde se esconde:</b> refrescos light o zero, chicles sin azúcar, yogures light, aguas saborizadas, gelatinas dietéticas.</p>
+       <div class="note" style="background:var(--green-bg);border-left-color:var(--green)"><b style="color:var(--green)">La mejor pista de toda la guía.</b> Por ley, si un producto contiene aspartamo debe advertir «contiene una fuente de fenilalanina». Esa frase aparece incluso cuando la palabra «aspartamo» no está en ningún otro lugar. Búscala: es tu detector infalible.</div>
+       <p style="margin-top:10px"><b>Sin alarmismo:</b> en 2023 la IARC lo clasificó como «posiblemente cancerígeno» (grupo 2B) con evidencia que ella misma califica de limitada. La FDA y el comité de expertos de la OMS revisaron lo mismo y no cambiaron la dosis diaria considerada segura. No es motivo de pánico: es motivo para identificarlo y decidir con información.</p>`},
+   {i:"○",t:"Carragenano",s:"El que genera debate",
+    b:`<p>Extracto de alga (E-407) usado como espesante en leches vegetales, cremas para café, yogures y helados.</p>
+       <p><b>Hay controversia real:</b> algunos estudios lo asocian con inflamación intestinal, pero esos efectos se observaron sobre todo con una forma degradada llamada poligeenano, que no está autorizada para alimentos. Los organismos reguladores lo consideran seguro en las dosis permitidas.</p>
+       <p>Si tienes sensibilidad digestiva, identifícalo y observa cómo te sienta a ti. Tu cuerpo tiene información que ningún estudio poblacional puede darte.</p>`}
+  ]},
+
+ {id:"palabras",t:"Palabras del frente",intro:"La parte de adelante del empaque es publicidad. Casi todas sus palabras tienen definición legal — y casi nunca es lo que tú entiendes.",cards:[],tabla:true},
+
+ {id:"protocolo",t:"Protocolo",intro:"Todo lo anterior comprimido en seis pasos. Guarda esta pantalla en tu celular y llévala al supermercado.",
+  cards:[
+   {i:"1",t:"Voltea el empaque",s:"Ignora la parte de adelante",
+    b:`<p>La portada es publicidad, diseñada para que compres. La parte de atrás es información, diseñada para cumplir la ley. Empieza por atrás siempre.</p>`},
+   {i:"2",t:"Lee solo los tres primeros",s:"No los veinte",
+    b:`<p>¿Hay azúcar, aceite refinado, harina refinada o agua entre ellos?</p><p>¿El ingrediente que da nombre al producto está en primer lugar?</p>`},
+   {i:"3",t:"Cuenta los azúcares",s:"Con nombres distintos",
+    b:`<p>Recorre la lista completa y cuenta cuántos nombres de azúcar distintos aparecen.</p><p><b>Tres o más = postre disfrazado.</b></p>`},
+   {i:"4",t:"Busca las señales de alarma",s:"Cuatro frases clave",
+    b:`<p><b>«parcialmente hidrogenado»</b> → hay grasas trans aunque la tabla diga 0 g</p>
+       <p><b>«contiene fenilalanina»</b> → hay aspartamo</p>
+       <p><b>E-621 o extracto de levadura</b> → hay glutamato</p>
+       <p><b>E-249 a E-252</b> → hay nitritos</p>`},
+   {i:"5",t:"Mira el tamaño de porción",s:"Y multiplica",
+    b:`<p>Todos los números de la tabla se refieren a una porción. Si el envase trae cinco porciones y te lo tomas entero, multiplica todo por cinco. Ese es el número real.</p>`},
+   {i:"6",t:"Aplica el 5 y el 20",s:"A lo que quieres limitar",
+    b:`<p>5% o menos del Valor Diario es bajo. 20% o más es alto.</p><p>Para sodio, grasa saturada, colesterol y azúcares, busca que sea bajo.</p>`}
+  ]}
+];
+
+const PALABRAS=[
+ ["Light","Bajo en calorías, saludable","Solo indica reducción respecto al producto original de la misma marca. Un producto muy calórico puede ser «light» y seguir siendo muy calórico. Para calorías: reducción mínima del 33%. Para grasa: 50%."],
+ ["Reducido en…","Tiene poco de eso","Mínimo 25% menos que el producto de referencia. Si el original tenía muchísimo, el reducido puede seguir teniendo mucho."],
+ ["Libre de azúcar","No tiene azúcar","Menos de 0,5 g por porción declarada. Puede contener maltodextrina, polialcoholes o edulcorantes. Y si la porción es pequeña, el paquete completo sí aporta."],
+ ["Sin azúcar añadida","No tiene azúcar","No se agregó azúcar de mesa, pero puede tener concentrados de jugo de fruta, que son azúcar. El azúcar propio del alimento tampoco cuenta."],
+ ["Integral","Hecho con grano entero","En Colombia no hay porcentaje mínimo obligatorio para usar la palabra en la portada. La única verificación real es la lista de ingredientes."],
+ ["Natural","Sin procesar, sin químicos","No tiene definición legal estricta. Un saborizante «natural» puede obtenerse mediante procesos industriales complejos."],
+ ["Alto en / Rico en","Tiene bastante","Este sí es preciso: 20% o más del valor de referencia por porción. Descriptor confiable."],
+ ["Buena fuente de","Tiene bastante","Entre 10% y 19% del valor de referencia por porción. Es la mitad de «alto en»."],
+ ["Bajo en sodio","Casi no tiene sal","Máximo 140 mg de sodio por porción. «Muy bajo en sodio» es máximo 35 mg."]
+];
+
+function buildLib(){
+  const nav=document.getElementById("libnav");
+  const cont=document.getElementById("libcontent");
+  nav.innerHTML=LIB.map((s,i)=>`<button class="lib-b${i===0?" on":""}" data-s="${s.id}">${s.t}</button>`).join("");
+
+  cont.innerHTML=LIB.map((s,i)=>{
+    let inner=`<p class="lib-intro">${s.intro}</p>`;
+    if(s.tabla){
+      inner+=`<div class="tw"><table class="wtab"><thead><tr><th>La palabra</th><th>Lo que entiendes</th><th>Lo que legalmente significa</th></tr></thead><tbody>`;
+      PALABRAS.forEach(p=>{inner+=`<tr><td>${p[0]}</td><td class="think">${p[1]}</td><td>${p[2]}</td></tr>`});
+      inner+=`</tbody></table></div>
+      <div class="note" style="margin-top:16px"><b>El principio general.</b> Los descriptores que hablan de lo que el producto TIENE («alto en fibra», «buena fuente de calcio») son precisos y confiables. Los que hablan de lo que NO tiene o de lo que fue reducido («light», «sin azúcar añadida») son relativos y necesitan verificación en la lista de ingredientes.</div>`;
+    } else {
+      inner+=`<div class="grid">`+s.cards.map(c=>`
+        <div class="gc">
+          <div class="gc-t"><span>${c.i}</span>${c.t}</div>
+          <div class="gc-s">${c.s}</div>
+          <div class="gc-more">Ver más ↓</div>
+          <div class="gc-body">${c.b}</div>
+        </div>`).join("")+`</div>`;
+    }
+    return `<div class="lib-sec${i===0?" on":""}" id="s-${s.id}">${inner}</div>`;
+  }).join("");
+
+  nav.querySelectorAll(".lib-b").forEach(b=>b.onclick=()=>{
+    nav.querySelectorAll(".lib-b").forEach(x=>x.classList.remove("on"));
+    b.classList.add("on");
+    cont.querySelectorAll(".lib-sec").forEach(x=>x.classList.remove("on"));
+    document.getElementById("s-"+b.dataset.s).classList.add("on");
+  });
+  cont.addEventListener("click",e=>{
+    const c=e.target.closest(".gc");
+    if(c) c.classList.toggle("open");
+  });
+}
+
+/* ══════════════════ ENTRENADOR ══════════════════ */
+
+const RETOS=[
+ {p:"Galletas «avena integral»",claim:"Fuente de fibra · Con avena",
+  l:"Harina de trigo, azúcar, avena en hojuelas, aceite de palma, jarabe de glucosa, sal, bicarbonato de sodio, lecitina de soya, saborizante artificial",
+  q:"Aplicando la Regla de los Tres Primeros, ¿qué es realmente este producto?",
+  o:["Una galleta integral de avena, como dice el empaque",
+     "Una galleta de harina blanca con azúcar en segundo lugar y algo de avena",
+     "Un producto sin azúcar añadido",
+     "No hay forma de saberlo sin la tabla nutricional"],
+  r:1,
+  fb:"La avena aparece en tercer lugar, después del azúcar. El primer ingrediente es harina de trigo refinada, no integral. Es una galleta dulce de harina blanca con avena de acompañamiento. La palabra «integral» en la portada no está respaldada por la lista."},
+
+ {p:"Yogur de fresa light",claim:"Light · 0% grasa",
+  l:"Leche descremada, agua, azúcar, jarabe de maíz de alta fructosa, almidón modificado, fructosa, pulpa de fresa, carragenano, rojo allura, aspartamo. Contiene una fuente de fenilalanina",
+  q:"¿Cuántos azúcares distintos hay en esta lista?",
+  o:["Uno: solo azúcar","Dos: azúcar y fructosa","Tres: azúcar, jarabe de maíz de alta fructosa y fructosa","Ninguno, es light"],
+  r:2,
+  fb:"Hay tres azúcares distintos repartidos en la lista: azúcar, jarabe de maíz de alta fructosa y fructosa. Esa es exactamente la técnica: al usar varios nombres, cada uno aparece más abajo y ninguno encabeza. Si los sumaras, el azúcar sería el ingrediente dominante. Y además lleva aspartamo, delatado por la advertencia de fenilalanina."},
+
+ {p:"Jamón de pavo premium",claim:"Sin nitritos ni nitratos añadidos",
+  l:"Pechuga de pavo, agua, sal marina, extracto de apio, azúcar de caña, especias naturales, cultivo lácteo",
+  q:"El empaque dice «sin nitritos añadidos». ¿Es cierto?",
+  o:["Sí, no hay ningún nitrito en la lista",
+     "Técnicamente sí, pero el extracto de apio aporta nitratos naturales que actúan igual",
+     "No, está mintiendo abiertamente",
+     "Solo si el producto es orgánico"],
+  r:1,
+  fb:"La declaración es legalmente cierta: no se añadieron nitritos sintéticos. Pero el extracto de apio concentra nitratos naturales que, al cocinarse a alta temperatura, forman las mismas nitrosaminas. Este es el truco más elegante del empaque premium: cumplir la letra de la ley sin cumplir el espíritu."},
+
+ {p:"Sopa instantánea de pollo",claim:"Sabor casero",
+  l:"Fideos (harina de trigo, aceite de palma), sal, glutamato monosódico, extracto de levadura, proteína vegetal hidrolizada, E-627, E-631, saborizante a pollo, cúrcuma",
+  q:"¿Por qué es tan difícil comer solo la mitad de este producto?",
+  o:["Porque las porciones son pequeñas",
+     "Porque tiene glutamato en tres formas distintas más dos multiplicadores",
+     "Porque tiene mucha sal",
+     "Es solo cuestión de fuerza de voluntad"],
+  r:1,
+  fb:"Hay glutamato declarado directamente, más dos fuentes camufladas (extracto de levadura y proteína vegetal hidrolizada), más los multiplicadores E-627 y E-631 que potencian el efecto hasta diez veces. El producto está diseñado a nivel químico para que quieras seguir comiendo. No es falta de voluntad."},
+
+ {p:"Pan artesanal de masa madre",claim:"Masa madre · Sin conservantes",
+  l:"Harina integral de trigo, agua, masa madre, sal marina",
+  q:"¿Qué te dice la Regla de los Cinco sobre este producto?",
+  o:["Que le faltan ingredientes","Que probablemente sea comida real",
+     "Que es más caro de lo que vale","Que no tiene valor nutricional"],
+  r:1,
+  fb:"Cuatro ingredientes, todos pronunciables, todos reconocibles como alimento. La harina integral encabeza la lista, que es exactamente lo que debería pasar en un pan integral real. Este es el tipo de lista que buscas."},
+
+ {p:"Bebida hidratante deportiva",claim:"Con electrolitos · Sin azúcar",
+  l:"Agua, ácido cítrico, citrato de sodio, sucralosa, acesulfame K, maltodextrina, cloruro de potasio, amarillo 5, benzoato de sodio, ácido ascórbico",
+  q:"El empaque dice «sin azúcar». ¿Qué merece atención aquí?",
+  o:["Nada, cumple lo que promete",
+     "La maltodextrina, que tiene índice glucémico más alto que el azúcar",
+     "Solo los colorantes",
+     "El agua está en primer lugar"],
+  r:1,
+  fb:"La maltodextrina es técnicamente un carbohidrato, no un azúcar, así que el producto puede declarar «sin azúcar» legalmente. Pero tiene un índice glucémico más alto que el azúcar de mesa. Además: benzoato de sodio junto a ácido ascórbico (vitamina C) es justamente la combinación que puede formar benceno."}
+];
+
+let tIdx=0,tScore=0,tAns=false;
+
+function renderTrainer(){
+  const box=document.getElementById("trbox");
+  if(tIdx>=RETOS.length){
+    const pct=Math.round(tScore/RETOS.length*100);
+    let msg;
+    if(pct>=83) msg="Ya tienes el ojo entrenado. Puedes ir al supermercado y leer cualquier empaque con criterio propio.";
+    else if(pct>=50) msg="Vas bien. Repasa la Biblioteca y vuelve a intentarlo: la habilidad se afina con repetición.";
+    else msg="Es normal al principio. Nadie nos enseñó esto. Recorre la Biblioteca con calma y vuelve a practicar.";
+    box.innerHTML=`<div class="tr-done">
+      <div class="tr-score">${tScore}/${RETOS.length}</div>
+      <p class="tr-msg">${msg}</p>
+      <button class="btn btn-p" style="flex:none" onclick="resetTrainer()">Practicar de nuevo</button>
+    </div>`;
+    return;
+  }
+  const r=RETOS[tIdx];
+  box.innerHTML=`
+    <div class="tr-prog">
+      <span>${tIdx+1} de ${RETOS.length}</span>
+      <div class="tr-bar"><div class="tr-fill" style="width:${tIdx/RETOS.length*100}%"></div></div>
+      <span>${tScore} correctas</span>
+    </div>
+    <div class="tr-prod">${r.p}</div>
+    <span class="tr-claim">${r.claim}</span>
+    <div class="tr-list">${r.l}</div>
+    <div class="tr-q">${r.q}</div>
+    <div class="tr-opts" id="opts">
+      ${r.o.map((o,i)=>`<button class="tr-o" data-i="${i}">${o}</button>`).join("")}
+    </div>
+    <div class="tr-fb" id="fb"></div>`;
+
+  document.getElementById("opts").querySelectorAll(".tr-o").forEach(b=>{
+    b.onclick=()=>{
+      if(tAns) return;
+      tAns=true;
+      const i=+b.dataset.i, ok=i===r.r;
+      if(ok) tScore++;
+      document.getElementById("opts").querySelectorAll(".tr-o").forEach((x,xi)=>{
+        x.disabled=true;
+        if(xi===r.r) x.classList.add("right");
+        else if(xi===i) x.classList.add("wrong");
+      });
+      const fb=document.getElementById("fb");
+      fb.className="tr-fb on "+(ok?"good":"bad");
+      fb.innerHTML=`<b>${ok?"Correcto":"Casi"}</b>${r.fb}
+        <div style="margin-top:14px"><button class="btn btn-p" style="flex:none;padding:11px 22px" onclick="nextReto()">
+          ${tIdx+1>=RETOS.length?"Ver resultado":"Siguiente"}</button></div>`;
+      fb.scrollIntoView({behavior:"smooth",block:"nearest"});
+    };
+  });
+}
+function nextReto(){tIdx++;tAns=false;renderTrainer();}
+function resetTrainer(){tIdx=0;tScore=0;tAns=false;renderTrainer();}
+
+/* ══════════════════ INIT ══════════════════ */
+
+document.querySelectorAll(".tab").forEach(t=>t.onclick=()=>{
+  document.querySelectorAll(".tab").forEach(x=>x.classList.remove("on"));
+  t.classList.add("on");
+  document.querySelectorAll(".panel").forEach(p=>p.classList.remove("on"));
+  document.getElementById(t.dataset.p).classList.add("on");
+  window.scrollTo({top:0,behavior:"smooth"});
+});
+
+document.getElementById("chips").innerHTML=
+  EJEMPLOS.map((e,i)=>`<button class="chip" data-i="${i}">${e.t}</button>`).join("");
+document.getElementById("chips").onclick=e=>{
+  const b=e.target.closest(".chip"); if(!b) return;
+  document.getElementById("inp").value=EJEMPLOS[+b.dataset.i].x;
+  render(EJEMPLOS[+b.dataset.i].x);
+};
+
+document.getElementById("go").onclick=()=>{
+  const v=document.getElementById("inp").value.trim();
+  if(v.length<5){alert("Escribe o pega la lista de ingredientes del producto.");return;}
+  render(v);
+};
+document.getElementById("clr").onclick=()=>{
+  document.getElementById("inp").value="";
+  document.getElementById("res").classList.remove("on");
+  document.getElementById("inp").focus();
+};
+document.getElementById("inp").addEventListener("keydown",e=>{
+  if((e.metaKey||e.ctrlKey)&&e.key==="Enter") document.getElementById("go").click();
+});
+
+document.getElementById("ctaBtn").onclick=e=>{
+  e.preventDefault();
+  alert("Aquí va el enlace a tu página de inscripción en Systeme.io.\n\nReemplaza el href del botón con tu URL real.");
+};
+
+buildLib();
+renderTrainer();
+</script>
+</body>
+</html>
